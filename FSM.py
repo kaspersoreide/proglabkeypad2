@@ -94,10 +94,10 @@ class KPC_Agent:
 
     def verify_login(self, signal = None):
         if self.password_buffer == self.read_password_file(self.file_name): ##lese fra fil
-            self.override_signal += "Y"
+            self.override_signal = "Y"
             self.led.correct()
         else:
-            self.override_signal+="N"
+            self.override_signal = "N"
             self.led.wrong()
             self.init_passcode_entry()
 
