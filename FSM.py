@@ -40,12 +40,20 @@ class Signal:
         return signal == "*"
 
     @staticmethod
-    def done(signal):
+    def correct(signal):
         return signal == "Y"
+
+    @staticmethod
+    def wrong(signal):
+        return signal == "N"
 
     @staticmethod
     def hash(signal):
         return signal == "#"
+
+    @staticmethod
+    def led_digits(signal):
+        return ord("0") <= ord(signal) <= ord("5")
 
 class KPC_Agent:
 
@@ -56,12 +64,11 @@ class KPC_Agent:
         self.file_name = "passord.txt"
         self.password_buffer = ""
         self.override_signal = None
-        self.led_id = 0
-        self.led_duration = 0
+        self.led_id = ''
+        self.led_duration = ''
         self.Legal_numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     def init_passcode_entry(self, signal = None):
-        self.reset_agent()
         print('init passcode entry')
         self.led.power_up()
         # flash
@@ -87,10 +94,10 @@ class KPC_Agent:
 
     def verify_login(self, signal = None):
         if self.password_buffer == self.read_password_file(self.file_name): ##lese fra fil
-            self.override_signal += "Y"
+            self.override_signal = "Y"
             self.led.correct()
         else:
-            self.override_signal+="N"
+            self.override_signal = "N"
             self.led.wrong()
             self.init_passcode_entry()
 
@@ -118,18 +125,26 @@ class KPC_Agent:
             return password
 
     def light_one_led(self, signal = None):
-        self.led.lid_ldur(self.led_id, self.led_duration)
+        print("inne i et lys")
+        self.led.lid_ldur(int(self.led_id), int(self.led_duration))
+        self.reset_agent()
 
     def exit_action(self, signal = None):
-        self.led.turn_off_LEDs()
+        self.led.power_down()
 
     def test(self):
         print("testing passcode entry")
         self.init_passcode_entry()
 
-    def do_nothing(self):
+    def do_nothing(self, signal = None):
         pass
 
+    def set_led(self, signal):
+        self.led_id = signal
+
+    def append_time(self, signal):
+        print("appender tid", signal)
+        self.led_duration += signal
 
 
 
@@ -148,7 +163,7 @@ class FSM:
             Rule(State.read_password, State.verify, Signal.asterisk, self.agent.verify_login),
             Rule(State.read_password, State.init, Signal.all_symbols, self.agent.reset_agent),
 
-            Rule(State.verify, State.active, Signal.done, self.agent.verify_login),
+            Rule(State.verify, State.active, Signal.correct, self.agent.do_nothing),
             Rule(State.verify, State.init, Signal.all_symbols, self.agent.reset_agent),
 
             Rule(State.active, State.read_active, Signal.asterisk, self.agent.reset_agent),
@@ -177,6 +192,7 @@ class FSM:
         return self.agent.get_next_signal()
 
     def run_rules(self, state, signal):
+        print("RUN RULES:", signal)
         for rule in self.rule_list:
             if rule.state == state and rule.signal_check(signal):
                 self.state = rule.next_state
