@@ -95,9 +95,11 @@ class KPC_Agent:
     def verify_login(self, signal = None):
         if self.password_buffer == self.read_password_file(self.file_name): ##lese fra fil
             self.override_signal = "Y"
+            print('yes')
             self.led.correct()
         else:
             self.override_signal = "N"
+            print("no")
             self.led.wrong()
             self.init_passcode_entry()
 
