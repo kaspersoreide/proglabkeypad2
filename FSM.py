@@ -22,9 +22,8 @@ class State:
     logout = 3
     verify = 4
     active = 5
-    finished = 6
-    time = 7
-    led = 8
+    time = 6
+    led_config = 7
 
 
 class Signal:
@@ -34,7 +33,7 @@ class Signal:
 
     @staticmethod
     def all_digits(signal):
-        return ord("0")<=ord(signal)<=ord("9")
+        return ord("0") <= ord(signal) <= ord("9")
 
     @staticmethod
     def asterisk(signal):
@@ -47,6 +46,10 @@ class Signal:
     @staticmethod
     def hash(signal):
         return signal == "#"
+
+    @staticmethod
+    def led_digits(signal):
+        return ord("0") <= ord(signal) <= ord("5")
 
 
 class KPC_Agent:
@@ -148,18 +151,28 @@ class FSM:
             Rule(State.init, State.read_password, Signal.all_symbols, self.agent.init_passcode_entry),
             Rule(State.read_password, State.read_password, Signal.all_digits, self.agent.add_next_digit),
             Rule(State.read_password, State.verify, Signal.asterisk, self.agent.verify_login),
-            #Rule(State.read_password, State.init, Signal.all_symbols, self.agent.reset_agent),
+            Rule(State.read_password, State.init, Signal.all_symbols, self.agent.reset_agent),
 
             Rule(State.verify, State.active, Signal.done, self.agent.verify_login),
             Rule(State.verify, State.init, Signal.all_symbols, self.agent.reset_agent),
 
             Rule(State.active, State.read_active, Signal.asterisk, self.agent.reset_agent),
             Rule(State.active, State.logout, Signal.hash, self.agent.exit_action),
-            Rule(State.active, State.led, Signal.all_symbols, self.agent.do_nothing),
+            Rule(State.active, State.led_config, Signal.all_symbols, self.agent.do_nothing),
 
             Rule(State.read_active, State.read_active, Signal.all_digits, self.agent.add_next_digit),
             Rule(State.read_active, State.active, Signal.asterisk, self.agent.validate_password_change),
             Rule(State.read_active, State.active, Signal.all_symbols, self.agent.reset_agent),
+
+            Rule(State.led_config, State.time, Signal.led_digits, self.agent.set_led),
+            Rule(State.led_config, State.active, Signal.all_symbols, self.agent.reset_agent),
+
+            Rule(State.time, State.time, Signal.all_digits, self.agent.append_time),
+            Rule(State.time, State.active, Signal.asterisk, self.agent.light_one_led),
+            Rule(State.time, State.active, Signal.all_symbols, self.agent.reset_agent),
+
+            Rule(State.logout, State.init, Signal.hash, self.agent.exit_action),
+            Rule(State.logout, State.active, Signal.all_symbols, self.agent.reset_agent)
         ]
 
     def add_rule(self, rule):
@@ -176,7 +189,7 @@ class FSM:
                 break
 
     def main_loop(self):
-        while self.state != State.finished:
+        while True:
             self.run_rules(self.state, self.get_next_signal())
 
 
