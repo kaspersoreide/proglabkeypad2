@@ -47,11 +47,6 @@ class Signal:
     def hash(signal):
         return signal == "#"
 
-    @staticmethod
-    def led_digits(signal):
-        return ord("0") <= ord(signal) <= ord("5")
-
-
 class KPC_Agent:
 
     def __init__(self):
