@@ -48,6 +48,11 @@ class Signal:
     def hash(signal):
         return signal == "#"
 
+    @staticmethod
+    def wrong(signal):
+        return signal == "N"
+
+
 
 class KPC_Agent:
 
@@ -148,10 +153,10 @@ class FSM:
             Rule(State.init, State.read_password, Signal.all_symbols, self.agent.init_passcode_entry),
             Rule(State.read_password, State.read_password, Signal.all_digits, self.agent.add_next_digit),
             Rule(State.read_password, State.verify, Signal.asterisk, self.agent.verify_login),
-            #Rule(State.read_password, State.init, Signal.all_symbols, self.agent.reset_agent),
+            Rule(State.read_password, State.init, Signal.all_symbols, self.agent.reset_agent),
 
             Rule(State.verify, State.active, Signal.done, self.agent.verify_login),
-            Rule(State.verify, State.init, Signal.all_symbols, self.agent.reset_agent),
+            Rule(State.verify, State.init,Signal.wrong, self.agent.reset_agent),
 
             Rule(State.active, State.read_active, Signal.asterisk, self.agent.reset_agent),
             Rule(State.active, State.logout, Signal.hash, self.agent.exit_action),
